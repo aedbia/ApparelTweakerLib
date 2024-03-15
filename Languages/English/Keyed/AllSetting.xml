@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+<No_Graphic>No Graphic →</No_Graphic>
+<No_Hair>No Hair →</No_Hair>
+<No_Beard>No Beard →</No_Beard>
+<Restart_to_apply_settings>Restart to apply settings</Restart_to_apply_settings>
+<Show_Hair>Show Hair →</Show_Hair>
+<Under_Hair>Under Hair →</Under_Hair>
+<Above_Hair>Above Hair →</Above_Hair>
+<Close_VEF_Draw_HeadApparel>Close VEF Draw HeadApparel</Close_VEF_Draw_HeadApparel>
+<Hide_Mode>Conditional Show Hat</Hide_Mode>
+<Hide_Indoor>Hide Indoor →</Hide_Indoor>
+<Hide_In_Bed>Hide in bed</Hide_In_Bed>
+<Hide_No_Fight>Hide not drafted →</Hide_No_Fight>
+
+<Only_Colonist>Only Work On Colonists</Only_Colonist>
+<Only_Colonist_Tooltip>When enabled, 'Hide in bed', 'Hide Indoor' and 'Hide Not Drafted' only work on colonists</Only_Colonist_Tooltip>
+
+<Advance_Mode>Advanced Mode</Advance_Mode>
+<Reset_Change>Reset Changes</Reset_Change>
+<Reset_Change_Tooltip>Reset offset and scale to default values.</Reset_Change_Tooltip>
+
+
+<Only_Colonist_1>'Show Hair', 'No Graphic' and 'No Hair' only work on colonists</Only_Colonist_1>
+<Only_Colonist_1_Tooltip>When enabled,'Show Hair', 'No Graphic' and 'No Hair' only work on colonists</Only_Colonist_1_Tooltip>
+<Only_Colonist_2>'Advanced Mode' only work on colonists</Only_Colonist_2>
+<Only_Colonist_2_Tooltip>When enabled, 'Advanced Mode' only work on colonists</Only_Colonist_2_Tooltip>
+<Into_Game>Please enter the game.</Into_Game>
+
+<Basic_Settings>Basic Settings</Basic_Settings>
+<Advanced_Settings>Advanced Settings</Advanced_Settings>
+<Global_Settings>Global Settings</Global_Settings>
+<Quick_NoGraphic>Quick No Graphic</Quick_NoGraphic>
+<Quick_HideHair>Quick Hide Hair</Quick_HideHair>
+<Quick_DisplayHair>Quick Display Hair</Quick_DisplayHair>
+<Quick_Open_HideInDoor>Quick Open HideInDoor</Quick_Open_HideInDoor>
+<Quick_Close_HideInDoor>Quick Close HideInDoor</Quick_Close_HideInDoor>
+<Quick_Open_HideNoFight>Quick Open Hide not drafted</Quick_Open_HideNoFight>
+<Quick_Close_HideNoFight>Quick Close Hide not drafted</Quick_Close_HideNoFight>
+<Quick_Open_HideInBed>Quick Open Hide In Bed</Quick_Open_HideInBed>
+<Quick_Close_HideInBed>Quick Close Hide In Bed</Quick_Close_HideInBed>
+<Reset_All_Setting>Reset All Setting(Except for global)</Reset_All_Setting>
+
+<Alien_Patch_Settings>Alien Patch Settings</Alien_Patch_Settings>
+<Show_With_Hair>show with hair</Show_With_Hair>
+<No_Show_With_Hair>Not shown with hair</No_Show_With_Hair>
+<Layer_Offset>Render Layer Offset</Layer_Offset>
+</LanguageData>
