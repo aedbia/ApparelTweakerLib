@@ -66,6 +66,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ABCahce.cs" />
     <Compile Include="ABEasyLib.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

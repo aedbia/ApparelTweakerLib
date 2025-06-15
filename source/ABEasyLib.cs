@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ABEasyLib.ABCache;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -15,7 +16,37 @@ namespace ABEasyLib
     }
     public static class ABEasyUtility
     {
+        private static MultithreadCacheExpirated<string, bool> _ColonistsCache = new MultithreadCacheExpirated<string, bool>(cleanupInterval: TimeSpan.FromMinutes(1));
         const float SCROLLBAR_WIDTH = 16f;
+
+        static ABEasyUtility()
+        {
+            if (_ColonistsCache == null)
+            {
+                _ColonistsCache = new MultithreadCacheExpirated<string, bool>(cleanupInterval: TimeSpan.FromMinutes(1));
+            }
+        }
+        public static bool IsColonist(Pawn pawn)
+        {
+
+            if (pawn == null)
+            {
+                return false;
+            }
+            string a = pawn.Name.ToStringFull;
+            if (_ColonistsCache.Count == 0 || !_ColonistsCache.TryGet(a, out bool ac))
+            {
+                bool isc = pawn.IsColonist;
+                _ColonistsCache.Set(a, isc);
+                return isc;
+            }
+            else
+            {
+                return _ColonistsCache.TryGet(a, out var isc) && isc;
+
+            }
+        }
+
 
         /// <summary>
         /// 绘制带有滚动条的面板
@@ -137,7 +168,7 @@ namespace ABEasyLib
                 isVertical ? content.Height : Math.Min(content.Height, viewRect.height)
             );
         }
-        public class ScrollViewContent
+        public abstract class ScrollViewContent
         {
             string ID;
             public virtual string Id
@@ -176,5 +207,26 @@ namespace ABEasyLib
             }
         }
     }
+
+    public abstract class ABGraphicData
+    {
+        private Type WorkNode;
+        private Def def;
+        public bool isShowing;
+        public Vector3 northOffset;
+        public Vector3 southOffset;
+        public Vector3 eastOffset;
+        public Vector3 westOffset;
+        public Vector3 northRot;
+        public Vector3 southRot;
+        public Vector3 eastORot;
+        public Vector3 westRot;
+        public ABGraphicData(Type workNode, Def def)
+        {
+            this.WorkNode = workNode;
+            this.def = def;
+        }
+    }
+
 }
 
