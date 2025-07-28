@@ -37,7 +37,6 @@ namespace ABEasyLib
                     TimeSpan interval = (TimeSpan)cleanupInterval;
                     _cleanupTimer = new Timer(CleanExpiredItemsCallback, null, interval, interval);
                 }
-
             }
 
             public void Set(K key, T value,
@@ -73,6 +72,22 @@ namespace ABEasyLib
                 finally
                 {
                     _lock.ExitWriteLock();
+                }
+            }
+            public bool ContainKey(K key)
+            {
+                _lock.EnterReadLock();
+                try
+                {
+                    if (_cache.ContainsKey(key))
+                    {
+                        return true;
+                    }
+                    return false;
+                }
+                finally
+                {
+                    _lock.ExitReadLock();
                 }
             }
             public bool TryGet(K key, out T value)

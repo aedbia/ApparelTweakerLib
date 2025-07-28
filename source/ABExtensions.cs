@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml;
 using UnityEngine;
 using Verse;
 
@@ -11,7 +12,7 @@ namespace ABEasyLib
         public static class ABWidgetsExtensions
         {
             const float SCROLLBAR_WIDTH = 16f;
-
+            private static string reset = null;
             /// <summary>
             /// 绘制带有滚动条的面板
             /// </summary>
@@ -22,74 +23,36 @@ namespace ABEasyLib
             /// <param name="showScrollBar">是否显示滚动条，默认为true</param>
             public static void DrawScrollPanel(Rect inRect, List<ScrollViewContent> list, ref Vector2 loc, bool isVertical = true, bool showScrollBar = true)
             {
-                // 如果列表为空，则不执行任何操作
-                if (list.NullOrEmpty())
-                {
-                    return;
-                }
+                if (list.NullOrEmpty()) return;
+                float contentLength = CalculateContentLength(list, isVertical);
 
-                // 计算内容的总长度
-                float contentLength = list.Sum(a =>
-                {
-                    if (!a.CanDisplay())
-                    {
-                        return 0;
-                    }
-                    return (isVertical ? a.Height : a.Width) + 5;
-
-                }) - 5f;
-
-                // 创建视图区域
-                float viewWidth = 0;
-                float viewHeight = 0;
                 float scrollbarOffset = showScrollBar ? SCROLLBAR_WIDTH : 0;
-
-                // 根据滚动方向计算视图区域的宽度和高度
-                if (isVertical)
-                {
-                    viewWidth = contentLength > inRect.height ? Math.Max(inRect.width - scrollbarOffset, 0) : inRect.width;
-                    viewHeight = contentLength;
-                }
-                else
-                {
-                    viewWidth = contentLength;
-                    viewHeight = contentLength > inRect.width ? Math.Max(inRect.height - scrollbarOffset, 0) : inRect.height;
-                }
-
-                // 创建视图矩形
-                Rect viewRect = new Rect(5, 5, viewWidth, viewHeight);
-
-                // 开始绘制滚动视图
+                Rect viewRect = CreateViewRect(inRect, contentLength, isVertical, scrollbarOffset);
                 try
                 {
                     Widgets.BeginScrollView(inRect, ref loc, viewRect, showScrollBar);
                     Widgets.BeginGroup(viewRect);
 
-                    float curX = 0;
-                    float curY = 0;
+                    float viewMin = isVertical ? loc.y : loc.x;
+                    float viewMax = viewMin + (isVertical ? viewRect.height : viewRect.width);
 
-                    // 绘制列表项
-                    for (int i = 0; i < list.Count; i++)
+                    float position = 0;
+                    int count = list.Count;
+
+                    for (int i = 0; i < count; i++)
                     {
                         ScrollViewContent content = list[i];
-                        if (IsContentVisible(curX, curY, content, loc, viewRect, isVertical))
+                        float size = isVertical ? content.Height : content.Width;
+
+                        if (position + size >= viewMin && position < viewMax)
                         {
-                            Rect contentRect = GetContentRect(curX, curY, content, viewRect, isVertical);
+                            Rect contentRect = CreateContentRect(position, content, viewRect, isVertical);
                             content.DrawContect(contentRect);
                         }
 
-                        // 根据滚动方向更新当前位置
-                        if (isVertical)
-                        {
-                            curY += content.Height + 5f;
-                        }
-                        else
-                        {
-                            curX += content.Width + 5f;
-                        }
+                        position += size + 5f;
                     }
                 }
-                // 确保滚动视图正确结束
                 finally
                 {
                     Widgets.EndGroup();
@@ -97,52 +60,46 @@ namespace ABEasyLib
                 }
             }
 
-            /// <summary>
-            /// 检查内容是否在滚动视图中可见。
-            /// </summary>
-            /// <param name="curX">当前内容的X轴位置。</param>
-            /// <param name="curY">当前内容的Y轴位置。</param>
-            /// <param name="content">滚动视图的内容信息。</param>
-            /// <param name="loc">滚动视图内容的左上角位置。</param>
-            /// <param name="viewRect">滚动视图的可见区域。</param>
-            /// <param name="isVertical">滚动视图是否为垂直滚动。</param>
-            /// <returns>如果内容在滚动视图中可见，则返回true；否则返回false。</returns>
-            private static bool IsContentVisible(float curX, float curY, ScrollViewContent content, Vector2 loc, Rect viewRect, bool isVertical)
+            // 提取的辅助方法
+            private static float CalculateContentLength(List<ScrollViewContent> list, bool isVertical)
+            {
+                float length = 0;
+                int count = list.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    length += (isVertical ? list[i].Height : list[i].Width) + 5;
+                }
+                return length - 5f;
+            }
+
+            private static Rect CreateViewRect(Rect inRect, float contentLength, bool isVertical, float scrollbarOffset)
             {
                 if (isVertical)
                 {
-                    // 对于垂直滚动，检查内容的Y轴位置是否在视图矩形内
-                    return (curY + content.Height >= loc.y && curY <= loc.y + viewRect.height);
+                    float viewWidth = contentLength > inRect.height ? Mathf.Max(inRect.width - scrollbarOffset, 0) : inRect.width;
+                    return new Rect(5, 5, viewWidth, contentLength);
                 }
                 else
                 {
-                    // 对于水平滚动，检查内容的X轴位置是否在视图矩形内
-                    return (curX + content.Width >= loc.x && curX <= loc.x + viewRect.width);
+                    float viewHeight = contentLength > inRect.width ? Mathf.Max(inRect.height - scrollbarOffset, 0) : inRect.height;
+                    return new Rect(5, 5, contentLength, viewHeight);
                 }
             }
 
-            /// <summary>
-            /// 获取内容在滚动视图中的矩形。
-            /// </summary>
-            /// <param name="curX">当前内容的X轴位置。</param>
-            /// <param name="curY">当前内容的Y轴位置。</param>
-            /// <param name="content">滚动视图的内容信息。</param>
-            /// <param name="viewRect">滚动视图的可见区域。</param>
-            /// <param name="isVertical">滚动视图是否为垂直滚动。</param>
-            /// <returns>返回内容在滚动视图中的矩形。</returns>
-            private static Rect GetContentRect(float curX, float curY, ScrollViewContent content, Rect viewRect, bool isVertical)
+            private static Rect CreateContentRect(float position, ScrollViewContent content, Rect viewRect, bool isVertical)
             {
-                // 根据滚动方向，计算内容的宽度和高度，确保内容的尺寸不会超过视图矩形的尺寸
-                return new Rect(
-                    curX,
-                    curY,
-                    isVertical ? Math.Min(content.Width, viewRect.width) : content.Width,
-                    isVertical ? content.Height : Math.Min(content.Height, viewRect.height)
-                );
+                if (isVertical)
+                {
+                    return new Rect(0, position, Math.Min(content.Width, viewRect.width), content.Height);
+                }
+                else
+                {
+                    return new Rect(position, 0, content.Width, Mathf.Min(content.Height, viewRect.height));
+                }
             }
             private static readonly string tooltipGrid = "DrawTooltipsGrid";
 
-            public static void DrawTooltipsGrid(Texture[] textures, Vector2 size, int displayCount = 4,bool doBackground = true)
+            public static void DrawTooltipsGrid(Texture[] textures, Vector2 size, int displayCount = 4, bool doBackground = true)
             {
                 //Text.Font = GameFont.Small;
                 Vector2 pos = UI.MousePositionOnUIInverted;
@@ -211,7 +168,65 @@ namespace ABEasyLib
                     }
                 }
             }
+
+            public static bool DrawAdjust(Rect rectAd, string label, ref float x, ref float y, float min, float max, float interval, Action resetAction)
+            {
+                Rect rectLa = rectAd.TopPart(0.4f);
+                Widgets.Label(rectLa.LeftPart(0.7f), label);
+                bool work = false;
+                if (reset == null)
+                {
+                    reset = "Reset".Translate();
+                }
+                if (Widgets.ButtonText(rectLa.RightPart(0.3f).TopHalf(), reset))
+                {
+                    if (resetAction != null)
+                    {
+                        resetAction();
+                    }
+                    work = true;
+                }
+                Rect rectXYL = rectAd.BottomPart(0.6f).TopHalf();
+                if (HorizontalSlider(rectXYL, ref x, min, max, interval))
+                {
+                    work = true;
+                }
+                rectXYL.y += rectXYL.height;
+                if (HorizontalSlider(rectXYL, ref y, min, max, interval))
+                {
+                    work = true;
+                }
+                Widgets.DrawLineHorizontal(rectAd.x + 5f, rectAd.y + rectAd.height, rectAd.width - 5f, Color.gray);
+                return work;
+            }
+            public static bool HorizontalSlider(Rect inRect, ref float x, float min, float max, float interval)
+            {
+                bool work = false;
+                Rect minus = new Rect(inRect.x, inRect.y, inRect.height, inRect.height);
+                inRect.x += inRect.height;
+                inRect.width -= 2 * inRect.height;
+                if (Widgets.ButtonImage(minus, TexButton.Minus))
+                {
+                    x = x > min ? x - interval : min;
+                    work = true;
+                }
+                    ;
+                float x0 = Widgets.HorizontalSlider(inRect, x, min, max);
+                if (x != x0)
+                {
+                    x = x0;
+                    work = true;
+                }
+                minus.x += (inRect.width + inRect.x);
+                if (Widgets.ButtonImage(minus, TexButton.Plus))
+                {
+                    x = x < max ? x + interval : max;
+                    work = true;
+                }
+                return work;
+            }
         }
+
         public abstract class ScrollViewContent
         {
             string ID;
@@ -238,22 +253,163 @@ namespace ABEasyLib
                     return SCROLL_HEIGHT;
                 }
             }
-            public ScrollViewContent(float width, float height, string id)
+
+            string NAME;
+            public virtual string displayName
+            {
+                get
+                {
+                    return NAME;
+                }
+            }
+            public ScrollViewContent(float width, float height, string id, string name)
             {
                 ID = id;
                 SCROLL_WIDTH = width;
                 SCROLL_HEIGHT = height;
+                NAME =name;
             }
 
             public virtual void DrawContect(Rect inRect)
             {
 
             }
-            public virtual bool CanDisplay()
+
+            public virtual bool FliterByString(string str)
             {
                 return true;
             }
         }
 
+        public static class ABScribeExtensions
+        {
+            /// <summary>
+            /// Only allow vector2, vector3,double and float;
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <param name="values"></param>
+            /// <param name="label"></param>
+            /// <param name="keepCount"></param>
+            /// <param name="defaultValue"></param>
+            /// <param name="forceSave"></param>
+            public static void Look<T>(ref T values, string label, int keepCount = 0, T defaultValue = default, bool forceSave = false)
+            {
+                if (Scribe.mode == LoadSaveMode.Saving)
+                {
+                    if (!forceSave && (values != null || defaultValue == null) && (values == null || values.Equals(defaultValue)))
+                    {
+                        return;
+                    }
+                    if (values == null)
+                    {
+                        if (Scribe.EnterNode(label))
+                        {
+                            try
+                            {
+                                Scribe.saver.WriteAttribute("IsNull", "True");
+                            }
+                            finally
+                            {
+                                Scribe.ExitNode();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        string keepCountStr = keepCount.ToString();
+                        if (values is Vector2 vector2)
+                        {
+                            string format1 = "({0:F" + keepCountStr + "}, {1:F" + keepCountStr + "})";
+                            string a = string.Format(format1, new object[2] { vector2.x, vector2.y });
+                            Scribe.saver.WriteElement(label, a);
+                        }else
+                        if (values is float float0)
+                        {
+                            string format1 = "{0:F" + keepCountStr + "}";
+                            string a = string.Format(format1, new object[1] { float0 });
+                            Scribe.saver.WriteElement(label, a);
+                        }
+                        else
+                        if (values is double double0)
+                        {
+                            string format1 = "{0:F" + keepCountStr + "}";
+                            string a = string.Format(format1, new object[1] { double0 });
+                            Scribe.saver.WriteElement(label, a);
+                        }
+                        else
+                        if(values is Vector3 vector3)
+                        {
+                            string format1 = "({0:F" + keepCountStr + "}, {1:F" + keepCountStr + "}, {1:F" + keepCountStr + "})";
+                            string a = string.Format(format1, new object[3] { vector3.x, vector3.y,vector3.z});
+                            Scribe.saver.WriteElement(label, a);
+                        }
+                    }
+                }
+                else if (Scribe.mode == LoadSaveMode.LoadingVars)
+                {
+                    values = ScribeExtractor.ValueFromNode(Scribe.loader.curXmlParent[label], defaultValue);
+                }
+            }
+
+            /// <summary>
+            /// 读取字典 Load or save 
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <param name="values"></param>
+            /// <param name="label"></param>
+            public static void LookDeep<T>(ref Dictionary<string,T> values, string label) where T: IExposable
+            {
+                if (Scribe.EnterNode(label))
+                {
+                    try
+                    {
+                        if (Scribe.mode == LoadSaveMode.Saving)
+                        {
+                            List<string> names = values.Keys.ToList();
+                            if (names != null)
+                            {
+                                foreach (string name in names)
+                                {
+                                    T target = values[name];
+                                    Scribe_Deep.Look(ref target, name);
+                                }
+                                return;
+                            }
+                            Scribe.saver.WriteAttribute("IsNull", "True");
+                        }
+                        else if (Scribe.mode == LoadSaveMode.LoadingVars)
+                        {
+                            XmlNode curXmlParent = Scribe.loader.curXmlParent;
+                            XmlAttribute xmlAttribute = curXmlParent.Attributes["IsNull"];
+                            if (xmlAttribute != null && xmlAttribute.Value.Equals("true", StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                values = null;
+                            }
+                            else
+                            {
+
+                                Dictionary<string, T> list = new Dictionary<string, T>(curXmlParent.ChildNodes.Count);
+                                foreach (XmlNode childNode in curXmlParent.ChildNodes)
+                                {
+
+                                    string name = childNode.Name;
+                                    T a = ScribeExtractor.SaveableFromNode<T>(childNode, null);
+                                    list.SetOrAdd(name, a);
+                                }
+                                values = list;
+                            }
+                        }
+                        return;
+                    }catch(Exception ex)
+                    { 
+                        Log.Warning($"Load or save config {label} failed: "+ex.ToString());
+                    }
+                    finally
+                    {
+                        Scribe.ExitNode();
+                    }
+                }
+            }
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using ABEasyLib.ABCache;
+using RimWorld;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +15,75 @@ namespace ABEasyLib
 
         }
     }
+    public class PawnTextureCache
+    {
+        private static MultithreadCacheExpirated<Pawn,PawnTextureCache> allPawnTextureCache = new MultithreadCacheExpirated<Pawn, PawnTextureCache>();
+        public List<Apparel> postApparels = new List<Apparel>();
+        public List<Apparel> preApparels = new List<Apparel>();
+        public List<Apparel> OverrideApparels = new List<Apparel>();
+        private readonly Pawn pawn;
+        private PawnTextureCache(Pawn pawn)
+        {
+             this.pawn = pawn;
+        }
+        public static bool GetPawnTextureCache(Pawn pawn,out PawnTextureCache cache)
+        {
+            if (allPawnTextureCache == null)
+            {
+                allPawnTextureCache = new MultithreadCacheExpirated<Pawn, PawnTextureCache>(cleanupInterval: TimeSpan.FromSeconds(30));
+            }
+            if (allPawnTextureCache.Count == 0||!allPawnTextureCache.ContainKey(pawn))
+            {
+                var aa = new PawnTextureCache(pawn);
+                allPawnTextureCache.Set(pawn, aa);
+            }
+            return allPawnTextureCache.TryGet(pawn, out cache);
+        }
+        public void GetPawnCacheWithApparel(Apparel apparel, Vector2 size, Rot4 direction, out Texture texture)
+        {
+            if (pawn != null && pawn.apparel != null && pawn.apparel.WornApparel != null)
+            {
+                pawn.apparel.WornApparel.Add(apparel);
+                if (postApparels == null)
+                {
+                    postApparels = new List<Apparel>();
+                }
+                postApparels.Add(apparel);
+                pawn.apparel.Notify_ApparelChanged();
+                RenderTexture rt = PortraitsCache.Get(pawn, size, direction);
+                texture = rt;
+                if (postApparels.Contains(apparel))
+                {
+                    postApparels.Remove(apparel);
+                }
+                pawn.apparel.WornApparel.Remove(apparel);
+                pawn.apparel.Notify_ApparelChanged();
+                return;
+            }
+            texture = null;
+        }
+
+        public List<Apparel> GetApparelList(List<Apparel> origin)
+        {
+            if (OverrideApparels.NullOrEmpty())
+            {
+                var list = pawn.apparel.WornApparel;
+                if (list!= origin)
+                {
+                    return origin;
+                }
+                return list;
+            }
+            else
+            {
+                return OverrideApparels;
+            }
+        }
+    }
     public static class ABEasyUtility
     {
         private static MultithreadCacheExpirated<int, bool> _ColonistsCache = new MultithreadCacheExpirated<int, bool>(cleanupInterval: TimeSpan.FromMinutes(1));
-        
+
         static ABEasyUtility()
         {
             if (_ColonistsCache == null)
